@@ -92,6 +92,54 @@ def get_model():
         },
     )
 
+def fallback_reply(message: str) -> str:
+    text = message.lower()
+
+    if any(word in text for word in ["order", "delivery", "doordash", "uber", "postmates"]):
+        return (
+            "You can order The Burger Den online at theburgerden.com, or through "
+            "DoorDash, Uber Eats, and Postmates. We're online only, so there is no "
+            "physical dine-in location."
+        )
+
+    if any(word in text for word in ["burger", "burgers", "menu", "beef"]):
+        return (
+            "We have beef, chicken, veggie, and build-your-own burgers. Popular beef "
+            "options include Double the Fun, Spill the Bourbon, Wake and Bacon, "
+            "Rodeo Ring, Vibe with Shrooms, and Mad for Mozza."
+        )
+
+    if any(word in text for word in ["chicken", "fried", "grilled"]):
+        return (
+            "Our chicken burgers include Pig N Chicken, Raid the Roost, Baja Beach "
+            "Chicken, and Fire it Up with fried chicken in buffalo sauce."
+        )
+
+    if any(word in text for word in ["veggie", "vegetarian", "plant"]):
+        return (
+            "Yes, we have veggie options: Baja Beach Veggie and Rodeo Ring Veggie, "
+            "both made with Dr. Prager's Veggie Patty. The veggie patty may contact "
+            "animal products, and the cheese is not plant-based."
+        )
+
+    if any(word in text for word in ["dessert", "desserts", "shake", "milkshake", "cheesecake"]):
+        return (
+            "For dessert, we have milkshakes in Vanilla, Chocolate, Strawberry, OREO, "
+            "and Strawberry Cheesecake, plus New York Cheesecake plain or with "
+            "strawberry topping."
+        )
+
+    if any(word in text for word in ["side", "sides", "fries", "rings", "fruit"]):
+        return "Our sides include Wavy-Cut Fries, Seasoned Fries, Onion Rings, and Seasonal Fruit."
+
+    if any(word in text for word in ["price", "prices", "cost", "how much"]):
+        return "Prices can vary by delivery platform, so please check theburgerden.com or your ordering app for current pricing."
+
+    return (
+        "I can help with The Burger Den menu, burgers, veggie options, desserts, "
+        "sides, and how to order. What would you like to know?"
+    )
+
 # ─── Models ──────────────────────────────────────────────────────────────────
 
 class Message(BaseModel):
@@ -111,11 +159,6 @@ def root():
 async def chat(request: ChatRequest):
     if not request.messages:
         raise HTTPException(status_code=400, detail="No messages provided")
-    if not GEMINI_API_KEY:
-        raise HTTPException(
-            status_code=500,
-            detail="GEMINI_API_KEY is not set. Add a valid Gemini API key to backend/.env.",
-        )
 
     # Build Gemini conversation history
     history = []
@@ -126,10 +169,12 @@ async def chat(request: ChatRequest):
         })
 
     last_message = request.messages[-1].content
+    if not GEMINI_API_KEY:
+        return {"reply": fallback_reply(last_message)}
 
     try:
         chat_session = get_model().start_chat(history=history)
         response = chat_session.send_message(last_message)
         return {"reply": response.text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        return {"reply": fallback_reply(last_message)}
