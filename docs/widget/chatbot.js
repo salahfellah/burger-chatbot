@@ -216,6 +216,7 @@
       }
       removeTyping();
       const reply = data.reply || "Sorry, I couldn't get a response. Please try again!";
+      console.debug("[Burger Den chatbot]", { source: data.source || "unknown" });
       addMessage(reply, "bot");
       history.push({ role: "assistant", content: reply });
     } catch (error) {

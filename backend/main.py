@@ -170,11 +170,11 @@ async def chat(request: ChatRequest):
 
     last_message = request.messages[-1].content
     if not GEMINI_API_KEY:
-        return {"reply": fallback_reply(last_message)}
+        return {"reply": fallback_reply(last_message), "source": "fallback"}
 
     try:
         chat_session = get_model().start_chat(history=history)
         response = chat_session.send_message(last_message)
-        return {"reply": response.text}
+        return {"reply": response.text, "source": "gemini"}
     except Exception:
-        return {"reply": fallback_reply(last_message)}
+        return {"reply": fallback_reply(last_message), "source": "fallback"}
