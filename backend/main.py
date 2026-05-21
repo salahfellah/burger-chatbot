@@ -153,7 +153,11 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "restaurant": RESTAURANT_CONFIG["name"]}
+    return {
+        "status": "ok",
+        "restaurant": RESTAURANT_CONFIG["name"],
+        "model": MODEL_NAME,
+    }
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
